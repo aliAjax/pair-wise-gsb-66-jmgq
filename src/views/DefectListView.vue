@@ -30,6 +30,11 @@ function assign() {
   store.assign(selected.value, owner.value)
   selected.value = []
 }
+function dispatchWithSpeed() {
+  const segmentIds = new Set(store.defects.filter((d) => selected.value.includes(d.id)).map((d) => d.segmentId))
+  const target = segmentIds.size === 1 ? [...segmentIds][0] : store.selectedSegmentId
+  router.push({ path: `/speed/${target}`, query: selected.value.length ? { defects: selected.value.join(',') } : {} })
+}
 </script>
 
 <template>
@@ -40,11 +45,12 @@ function assign() {
       <article><span>待复测</span><strong>{{ store.defects.filter((item) => item.status === '待复测' || item.status === '复测不合格').length }}</strong><small>至少完成一轮复测</small></article>
       <article><span>区段版本</span><strong>{{ store.segments.reduce((sum, item) => sum + item.version, 0) }}</strong><small>每次整治递增</small></article>
     </div>
-    <div class="toolbar">
+    <div class="toolbar dispatch-toolbar">
       <v-text-field v-model="store.keyword" density="compact" variant="outlined" hide-details prepend-inner-icon="mdi-magnify" placeholder="搜索缺陷、区段、类型或工区" />
       <v-select v-model="store.status" :items="statuses" density="compact" variant="outlined" hide-details />
       <v-select v-model="owner" :items="['工务一工区', '工务二工区', '桥隧工区']" density="compact" variant="outlined" hide-details />
-      <v-btn color="primary" :disabled="!selected.length" @click="assign">批量派工 {{ selected.length ? `(${selected.length})` : '' }}</v-btn>
+      <v-btn variant="outlined" :disabled="!selected.length" @click="assign">简易派工 {{ selected.length ? `(${selected.length})` : '' }}</v-btn>
+      <v-btn color="primary" :disabled="!selected.length" @click="dispatchWithSpeed">派工并登记限速 {{ selected.length ? `(${selected.length})` : '' }}</v-btn>
     </div>
     <div class="query-band"><span>{{ loading ? 'GraphQL数据读取中' : `GraphQL已返回${segmentResult?.segments?.length ?? 0}个区段` }}</span><span>离线补录会保留记录轮次</span></div>
     <v-data-table v-model="selected" :headers="headers" :items="store.filtered" item-value="id" show-select density="compact" :items-per-page="12">
@@ -60,4 +66,5 @@ function assign() {
 
 <style scoped>
 .query-band { display: flex; justify-content: space-between; font-size: 11px; color: #718080; margin: 0 0 10px; }
+.dispatch-toolbar { grid-template-columns: minmax(260px, 1fr) 140px 140px auto auto; }
 </style>
